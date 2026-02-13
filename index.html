@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nasza Historia ❤️</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f9f5f0;
+            --accent-color: #e67e22; 
+            --heart-color: #e74c3c;
+            --text-color: #2c3e50;
+            --polaroid-bg: #fff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#dcd9d4 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'Nunito', sans-serif;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .date, .handwritten { font-family: 'Caveat', cursive; }
+
+        /* --- EKRAN BLOKADY --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #2c3e50;
+            z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s;
+        }
+        #login-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .heart-wrapper {
+            position: relative; width: 100px; height: 100px; margin-bottom: 40px;
+            animation: heartbeat 1.5s infinite;
+        }
+        .heart {
+            background-color: var(--heart-color); width: 100px; height: 100px;
+            transform: rotate(-45deg); position: relative;
+        }
+        .heart::before, .heart::after {
+            content: ""; position: absolute; width: 100px; height: 100px;
+            background-color: var(--heart-color); border-radius: 50%;
+        }
+        .heart::before { top: -50px; left: 0; }
+        .heart::after { left: 50px; top: 0; }
+
+        .login-content p { color: white; font-size: 1.5rem; margin-bottom: 15px; font-family: 'Caveat', cursive; text-align: center; }
+        input[type="password"] {
+            padding: 10px 20px; border-radius: 30px; border: none; outline: none;
+            font-size: 1.2rem; text-align: center; width: 330px;
+        }
+        input.shake { animation: shake 0.4s ease-in-out; border: 2px solid #ff6b6b; }
+
+        /* --- PRZYCISK MUZYKI --- */
+        #music-control {
+            position: fixed; bottom: 20px; right: 20px; z-index: 9000;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid var(--accent-color);
+            border-radius: 50%; width: 50px; height: 50px;
+            font-size: 1.5rem; cursor: pointer; display: none;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #music-control:hover { transform: scale(1.1); }
+
+        /* --- MODAL GALERII --- */
+        #gallery-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10001;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #gallery-modal.active { opacity: 1; pointer-events: auto; }
+
+        .modal-card {
+            background: #fff; padding: 15px 15px 40px 15px;
+            max-width: 90%; width: 600px;
+            text-align: center; position: relative;
+            transform: rotate(-1deg);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        .modal-card img {
+            width: 100%; height: auto; max-height: 70vh; object-fit: contain;
+            border: 1px solid #ddd;
+        }
+        .modal-caption {
+            font-family: 'Caveat', cursive; font-size: 1.5rem; color: #444; margin-top: 15px;
+        }
+        .close-btn {
+            position: absolute; top: -40px; right: 0;
+            color: white; font-size: 3rem; cursor: pointer;
+        }
+        .nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,0.1); color: white; border: none;
+            font-size: 3rem; cursor: pointer; padding: 0 20px;
+            transition: background 0.3s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
+        .prev { left: 0; } .next { right: 0; }
+
+        /* --- OŚ CZASU --- */
+        header {
+            height: 100vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; padding: 20px;
+        }
+        header h1 { font-size: 3.5rem; margin-bottom: 10px; transform: rotate(-3deg); }
+        
+        .timeline-container { position: relative; max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        
+        .timeline-container::before {
+            content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px;
+            background-image: linear-gradient(to bottom, #ddd 50%, rgba(255,255,255,0) 0%);
+            background-size: 2px 20px; transform: translateX(-50%); z-index: -1;
+        }
+
+        .story-block {
+            background: var(--polaroid-bg); padding: 20px; margin-bottom: 100px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 45%; position: relative;
+            opacity: 0; transform: translateY(50px); transition: all 0.8s ease-out;
+        }
+        .story-block::after {
+            content: ''; position: absolute; top: -15px; left: 50%; width: 100px; height: 35px;
+            background-color: rgba(230, 126, 34, 0.4); transform: translateX(-50%) rotate(-2deg);
+        }
+
+        /* Specjalny styl dla elementu STARTOWEGO (Rok 2023) */
+        .start-marker {
+            width: 60%;
+            margin: 0 auto 100px auto !important; /* Wymuszenie środka */
+            text-align: center;
+            background: #fff;
+            border: 4px dashed var(--accent-color);
+            transform: none !important; /* Brak rotacji */
+        }
+        .start-marker h2 { font-size: 2.5rem; color: var(--accent-color); margin-bottom: 5px; }
+
+        .date { color: var(--accent-color); font-size: 1.8rem; display: block; margin-bottom: 10px; }
+        
+        .cover-photo {
+            width: 100%; border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            cursor: pointer; transition: transform 0.3s;
+        }
+        .cover-photo:hover { transform: scale(1.03); }
+
+        @media (min-width: 768px) {
+            /* Tylko standardowe bloki są na przemian */
+            .story-block:not(.start-marker):nth-child(odd) { margin-left: auto; transform: rotate(1deg) translateY(50px); }
+            .story-block:not(.start-marker):nth-child(even) { margin-right: auto; transform: rotate(-1deg) translateY(50px); }
+            
+            .story-block.visible:not(.start-marker):nth-child(odd) { transform: rotate(1deg) translateY(0); opacity: 1; }
+            .story-block.visible:not(.start-marker):nth-child(even) { transform: rotate(-1deg) translateY(0); opacity: 1; }
+            
+            /* Marker startowy po prostu się pojawia */
+            .start-marker.visible { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 767px) {
+            .timeline-container::before { left: 10px; }
+            .story-block { width: calc(100% - 20px); margin-left: 20px; transform: translateY(50px); }
+            .story-block.visible { opacity: 1; transform: translateY(0); }
+            .start-marker { width: calc(100% - 20px); margin-left: 20px !important; text-align: left; }
+        }
+
+        .counter-section {
+            text-align: center; padding: 80px 20px; background: #fff;
+            border-top: 4px dashed #ddd; margin-top: 50px;
+        }
+        #timer { font-size: 2rem; color: var(--accent-color); font-weight: bold; margin: 20px 0; }
+
+        @keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="heart-wrapper"><div class="heart"></div></div>
+        <div class="login-content">
+            <p>Podaj hasło, by zobaczyć jak to wyglądało</p>
+            <input type="password" id="password-input" placeholder="❤️" autocomplete="off">
+        </div>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="song.mp3" type="audio/mpeg">
+        </audio>
+    <button id="music-control" onclick="toggleMusic()">🎵</button>
+
+
+    <div id="gallery-modal" onclick="closeGallery(event)">
+        <span class="close-btn">&times;</span>
+        <button class="nav-btn prev" onclick="changeSlide(-1)">&#10094;</button>
+        
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <img id="modal-img" src="" alt="">
+            <div id="modal-caption" class="modal-caption">...</div>
+        </div>
+
+        <button class="nav-btn next" onclick="changeSlide(1)">&#10095;</button>
+    </div>
+
+    <header>
+        <span class="handwritten" style="font-size: 1.5rem; color: #888;">Tak to wyglądało w czasie</span>
+        <h1>A wszystko zaczęło się niepozornie</h1>
+        <p>Przewiń w dół, żeby zobaczyć naszą drogę. <br>Kliknij w zdjęcia, aby zobaczyć więcej.</p>
+    </header>
+
+    <div class="timeline-container">
+        
+        <div class="story-block start-marker">
+            <h2>Rok 2023</h2>
+            <p style="font-size: 1.2rem;">Gdzieś tutaj nasze drogi przecięły się po raz pierwszy. Był początek tej historii.</p>
+            <div style="font-size: 3rem; margin-top: 10px;">👋✨</div>
+        </div>
+
+        <div class="story-block">
+            <span class="date">31 Grudnia 2023</span>
+            <h2>Nasza pierwsza impreza</h2>
+            <p>Pierwsze wydarzenie, na którym bawiliśmy się razem. Trochę losowo i jeszcze nie bardzo się znając.</p>
+            <img class="cover-photo" src="img/sylwester1.jpg" onclick="openGallery('sylwester')" alt="Sylwester">
+        </div>
+
+        <div class="story-block">
+            <span class="date">Lipiec 2024</span>
+            <h2>Pierwsze wspólne wakacje</h2>
+            <p>I Skibidi trip razem ale jeszcze nie razem.</p>
+            <img class="cover-photo" src="img/wakacje241.jpeg" onclick="openGallery('wakacje24')" alt="Wakacje24">
+        </div>
+
+        <div class="story-block">
+            <span class="date">Lipiec 2025</span>
+            <h2>Drugie wspólne wakacje</h2>
+            <p>II Skibidi trip razem ale nadal nie razem.</p>
+            <img class="cover-photo" src="img/wakacje251.JPG" onclick="openGallery('wakacje25')" alt="Wakacje25">
+        </div>
+
+        <div class="story-block">
+            <span class="date">Wrzesień 2025</span>
+            <h2>18-tka Karoliny</h2>
+            <p>Największy punkt zwrotny, gdzie oboje poczuliśmy, że coś między nami jest.</p>
+            <img class="cover-photo" src="img/18tka1.jpg" onclick="openGallery('18tka')" alt="18tka">
+        </div>
+
+        <div class="story-block">
+            <span class="date">Październik 2025</span>
+            <h2>Impreza Halloween</h2>
+            <p>Bawiliśmy się razem prawie cały czas i już praktycznie każdy wiedział, że coś z tego będzie.</p>
+            <img class="cover-photo" src="img/halloween1.jpeg" onclick="openGallery('halloween')" alt="Halloween">
+        </div>
+
+        <div class="story-block" style="border: 2px solid var(--accent-color);">
+            <span class="date">28 Listopada 2025 ❤️</span>
+            <h2>Oficjalny start</h2>
+            <p>Oficjalny początek naszego związku</p>
+            <img class="cover-photo" src="img/poczatek.jpg" onclick="openGallery('poczatek')" alt="Poczatek">
+        </div>
+
+        <div class="story-block" style="border: 2px solid var(--accent-color);">
+            <span class="date">Grudzień 2025 ❤️</span>
+            <h2>Pierwszy miesiąc</h2>
+            <p>Pierwsze wspólne urodziny, pierwsze święta i pierwszy sylwester razem.</p>
+            <img class="cover-photo" src="img/pierwszy1.jpg" onclick="openGallery('pierwszy')" alt="Pierwszy">
+        </div>
+
+        <div class="story-block" style="border: 2px solid var(--accent-color);">
+            <span class="date">Luty 2026 ❤️</span>
+            <h2>Studniówka</h2>
+            <p>Wspólnie spędzona studniówka. TWOJA studniówka, a ile stresu przy tym było.</p>
+            <img class="cover-photo" src="https://picsum.photos/400/300?random=3" onclick="openGallery('studniowka')" alt="Studniowka">
+        </div>
+
+        <div class="story-block" style="border: 2px solid var(--accent-color);">
+            <span class="date">Marzec 2026 ❤️</span>
+            <h2>Pierwsze wakacje</h2>
+            <p>Alicante -> nasz pierwszy wspólny wyjazd</p>
+            <img class="cover-photo" src="img/alicante.jpg" onclick="openGallery('alicante')" alt="Alicante">
+        </div>
+
+        <div class="story-block">
+            <span class="date">Ciąg dalszy nastąpi...</span>
+        </div>
+
+    </div>
+
+    <div class="counter-section">
+        <div id="timer">...</div>
+    </div>
+
+    <script>
+        // --- KONFIGURACJA ---
+        const CONFIG = {
+            password: "kochamcie", 
+            startDate: new Date(2025, 10, 28, 18, 0, 0) // Data: 28 Listopada 2025
+        };
+
+        // --- BAZA ZDJĘĆ ---
+        const galleryData = {
+            'sylwester': [
+                'img/sylwester1.jpg', 
+                'img/sylwester2.jpg'
+            ],
+            'wakacje24': [
+                'img/wakacje241.jpeg',
+                'img/wakacje242.jpg',
+                'img/wakacje243.jpeg',
+                'img/wakacje244.jpg'
+            ],
+            'wakacje25': [
+                'img/wakacje251.jpg',
+                'img/wakacje252.png',
+                'img/wakacje253.jpeg',
+                'img/wakacje254.jpeg'
+            ],
+            '18tka': [
+                'img/18tka1.jpg',
+                'img/18tka2.jpg'
+            ],
+            'halloween': [
+                'img/halloween1.jpeg',
+                'img/halloween2.jpeg',
+                'img/halloween3.jpeg'
+            ],
+            'pierwszy': [
+                'img/pierwszy1.jpg',
+                'img/pierwszy2.jpg',
+                'img/pierwszy3.jpeg',
+                'img/pierwszy4.jpeg',
+                'img/pierwszy5.jpg'
+            ],
+            'studniowka': [
+                'img/studniowka1.jpg',
+                'img/studniowka2.jpg',
+                'img/studniowka3.jpeg',
+                'img/studniowka4.jpeg',
+            ],
+            'alicante': [
+                'img/alicante1.jpg',
+                'img/alicante2.jpg',
+                'img/alicante3.jpeg',
+                'img/alicante4.jpeg',
+            ],
+        };
+
+        // --- 1. LOGIKA GALERII ---
+        let currentImages = [];
+        let currentIndex = 0;
+        const modal = document.getElementById('gallery-modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalCaption = document.getElementById('modal-caption');
+
+        function openGallery(galleryId) {
+            if (!galleryData[galleryId]) return;
+            currentImages = galleryData[galleryId];
+            currentIndex = 0;
+            updateImage();
+            modal.classList.add('active');
+        }
+
+        function closeGallery(e) {
+            if (e && e.target.classList.contains('nav-btn')) return; 
+            modal.classList.remove('active');
+        }
+
+        function changeSlide(step) {
+            currentIndex += step;
+            if (currentIndex >= currentImages.length) currentIndex = 0;
+            if (currentIndex < 0) currentIndex = currentImages.length - 1;
+            updateImage();
+        }
+
+        function updateImage() {
+            modalImg.style.opacity = 0;
+            setTimeout(() => {
+                modalImg.src = currentImages[currentIndex];
+                modalCaption.innerText = `Wspomnienie ${currentIndex + 1} / ${currentImages.length}`;
+                modalImg.style.opacity = 1;
+            }, 200);
+        }
+
+        // --- 2. HASŁO + MUZYKA ---
+        const passInput = document.getElementById('password-input');
+        
+        function checkPassword() {
+            if (passInput.value.toLowerCase().trim() === CONFIG.password) {
+                document.getElementById('login-overlay').classList.add('hidden');
+                
+                const music = document.getElementById('bg-music');
+                music.volume = 0.4; 
+                music.play().catch(e => console.log("Kliknij ikonę nutki"));
+                
+                document.getElementById('music-control').style.display = 'block';
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            } else {
+                passInput.classList.add('shake');
+                setTimeout(() => passInput.classList.remove('shake'), 400);
+            }
+        }
+        passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPassword(); });
+
+        function toggleMusic() {
+            const music = document.getElementById('bg-music');
+            const btn = document.getElementById('music-control');
+            if (music.paused) {
+                music.play();
+                btn.innerText = '🎵';
+            } else {
+                music.pause();
+                btn.innerText = '🔇';
+            }
+        }
+
+        // --- 3. SCROLLYTELLING ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.story-block').forEach(b => observer.observe(b));
+
+        // --- 4. LICZNIK ---
+        function updateTimer() {
+            const diff = new Date() - CONFIG.startDate;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            document.getElementById('timer').innerText = `${d} dni, ${h} godz, ${m} min, ${s} s`;
+        }
+        setInterval(updateTimer, 1000); updateTimer();
+    </script>
+</body>
+</html>
